@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Vision</title>
+    <style>
+      :root {
+        --bg-color: rgba(0, 0, 0, 0.6);
+        --text-color: white;
+        --input-bg: white;
+        --input-text: black;
+        --btn-bg: #1e90ff;
+        --btn-hover: #00bfff;
+      }
+
+      body.light {
+        --bg-color: rgba(255, 255, 255, 0.9);
+        --text-color: #111;
+        --input-bg: #f0f0f0;
+        --input-text: #111;
+        --btn-bg: #007bff;
+        --btn-hover: #3399ff;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", sans-serif;
+      }
+      body {
+        color: var(--text-color);
+        text-align: center;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+        transition: background 0.3s, color 0.3s;
+      }
+      video#bg-video {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -1;
+      }
+      .container {
+        background: var(--bg-color);
+        padding: 30px;
+        margin: 100px auto;
+        border-radius: 20px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        transition: background 0.3s;
+      }
+      input[type="text"],
+      button {
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: background 0.3s, color 0.3s;
+      }
+      input[type="text"] {
+        width: 100%;
+        background-color: var(--input-bg);
+        color: var(--input-text);
+      }
+      button {
+        width: 100%;
+        background-color: var(--btn-bg);
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: var(--btn-hover);
+      }
+      .weather-icon {
+        width: 100px;
+        height: 100px;
+        margin: 15px auto;
+      }
+      #output p {
+        font-size: 18px;
+        margin: 5px 0;
+      }
+
+      /* Toggle Switch */
+      .toggle-switch {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+      }
+
+      label.switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+      }
+
+      label.switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          margin-top: 60px;
+          padding: 20px;
+        }
+        #output p {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <video autoplay muted loop id="bg-video">
+      <source id="bgSource" src="clear.mp4" type="video/mp4" />
+      Your browser does not support HTML5 video.
+    </video>
+
+    <!-- Theme toggle -->
+    <div class="toggle-switch">
+      <label class="switch">
+        <input type="checkbox" id="themeToggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="container">
+      <h1>🌤️ ClimoSync</h1>
+      <input type="text" id="c" placeholder="Enter city name..." />
+      <button onclick="getW()">Get Weather</button>
+
+      <img
+        src=""
+        alt="Weather Icon"
+        id="icon"
+        class="weather-icon"
+        style="display: none"
+      />
+
+      <div id="output">
+        <p><strong>Temperature:</strong> <span id="temp">--</span></p>
+        <p><strong>Humidity:</strong> <span id="humidity">--</span></p>
+        <p><strong>Pressure:</strong> <span id="pressure">--</span></p>
+        <p><strong>Wind Speed:</strong> <span id="windSpeed">--</span></p>
+        <p><strong>Wind Direction:</strong> <span id="windDir">--</span></p>
+        <p><strong>Visibility:</strong> <span id="visibility">--</span></p>
+        <p><strong>Cloudiness:</strong> <span id="cloudiness">--</span></p>
+      </div>
+    </div>
+
+    <script>
+      async function getW() {
+        const city = document.getElementById("c").value.trim();
+        const api = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=755d6704f187a228e59f397f4bcffa92`;
+
+        try {
+          const result = await fetch(api);
+          const data = await result.json();
+
+          if (data.cod === 200) {
+            const weather = data.weather[0].main.toLowerCase();
+            const iconCode = data.weather[0].icon;
+
+            document.getElementById("temp").textContent = `${(
+              data.main.temp - 273.15
+            ).toFixed(2)} °C`;
+            document.getElementById("humidity").textContent =
+              data.main.humidity + " %";
+            document.getElementById("pressure").textContent =
+              data.main.pressure + " hPa";
+            document.getElementById("windSpeed").textContent =
+              data.wind.speed + " m/s";
+            document.getElementById("windDir").textContent =
+              data.wind.deg + "°";
+            document.getElementById("visibility").textContent =
+              data.visibility / 1000 + " km";
+            document.getElementById("cloudiness").textContent =
+              data.clouds.all + " %";
+
+            const iconElement = document.getElementById("icon");
+            iconElement.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            iconElement.style.display = "block";
+
+            const bgVideo = document.getElementById("bg-video");
+            const bgSource = document.getElementById("bgSource");
+
+            if (
+              weather.includes("rain") ||
+              weather.includes("drizzle") ||
+              weather.includes("thunderstorm")
+            ) {
+              bgSource.src = "rain.mp4";
+            } else if (weather.includes("snow")) {
+              bgSource.src = "snow.mp4";
+            } else {
+              bgSource.src = "clear.mp4";
+            }
+
+            bgVideo.load();
+            bgVideo.play();
+          } else {
+            alert("City not found. Please enter a valid city name.");
+          }
+        } catch (error) {
+          alert("Error fetching weather data.");
+          console.error(error);
+        }
+      }
+
+      // Theme toggle logic
+      const themeToggle = document.getElementById("themeToggle");
+      themeToggle.addEventListener("change", () => {
+        document.body.classList.toggle("light", themeToggle.checked);
+      });
+    </script>
+  </body>
+</html>
+
+
+
